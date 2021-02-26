@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Список оборудования</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+  <h2>Список оборудования</h2>
+  <form name="equipmentForm">
+    <input type="hidden" name="id" value="0" />
+    <div class="form-group">
+      <label for="name">Название:</label>
+      <input class="form-control" name="name" />
+    </div>
+    <div class="form-group">
+      <label for="age">Цена:</label>
+      <input class="form-control" name="price" />
+    </div>
+    <div class="panel-body">
+      <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+      <button type="reset" class="btn btn-sm btn-primary">Сбросить</button>
+    </div>
+  </form>
+  <table class="table table-condensed table-striped table-bordered">
+
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Название</th>
+        <th>Цена</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+
+  </table>
+</div>
+  <script>
+    // Получение списка оборудования
+    function GetEquipments() {
+      $.ajax({
+        url: "/api/equipments",
+        type: "GET",
+        contentType: "application/json",
+        success: function (equipments) {
+          var rows = "";
+          $.each(equipments, function (index, equipment) {
+            // добавляем полученные элементы в таблицу
+            rows += row(equipment);
+          })
+          $("table tbody").append(rows);
+        }
+      });
+    }
+    // Получение одного оборудования
+    function GetEquipment(id) {
+      $.ajax({
+        url: "/api/equipments/" + id,
+        type: "GET",
+        contentType: "application/json",
+        success: function (equipment) {
+          var form = document.forms["equipmentForm"];
+          form.elements["id"].value = equipment.id;
+          form.elements["name"].value = equipment.name;
+          form.elements["price"].value = equipment.price;
+        }
+      });
+    }
+    // Добавление оборудования
+    function CreateEquipment(name, price) {
+      $.ajax({
+        url: "api/equipments",
+        contentType: "application/json",
+        method: "POST",
+        data: JSON.stringify({
+          name: name,
+          price: price
+        }),
+        success: function (equipment) {
+          reset();
+          $("table tbody").append(row(equipment));
+        }
+      })
+    }
+    // Изменение оборудования
+    function EditEquipment(id, name, price) {
+      $.ajax({
+        url: "api/equipments",
+        contentType: "application/json",
+        method: "PUT",
+        data: JSON.stringify({
+          id: id,
+          name: name,
+          price: price
+        }),
+        success: function (equipment) {
+          reset();
+          $("tr[data-rowid='" + equipment.id + "']").replaceWith(row(equipment));
+        }
+      })
+    }
+    // сброс формы
+    function reset() {
+      var form = document.forms["equipmentForm"];
+      form.reset();
+      form.elements["id"].value = 0;
+    }
+    // Удаление оборудования
+    function DeleteEquipment(id) {
+      $.ajax({
+        url: "api/equipments/" + id,
+        contentType: "application/json",
+        method: "DELETE",
+        success: function (equipment) {
+          console.log(equipment);
+          $("tr[data-rowid='" + equipment.id + "']").remove();
+        }
+      })
+    }
+    // создание строки для таблицы
+
+    var row = function (equipment) {
+      return "<tr data-rowid='" + equipment.id + "'><td>" + equipment.id + "</td>" +
+        "<td>" + equipment.name + "</td> <td>" + equipment.price + "</td>" +
+        "<td><a class='editLink' data-id='" + equipment.id + "'>Изменить</a> | " +
+        "<a class='removeLink' data-id='" + equipment.id + "'>Удалить</a></td></tr>";
+    }
+    // отправка формы
+    $("form").submit(function (e) {
+      e.preventDefault();
+      var id = this.elements["id"].value;
+      var name = this.elements["name"].value;
+      var price = this.elements["price"].value;
+      if (id == 0)
+        CreateEquipment(name, price);
+      else
+        EditEquipment(id, name, price);
+    });
+    // нажимаем на ссылку Изменить
+    $("body").on("click", ".editLink", function () {
+      var id = $(this).data("id");
+      GetEquipment(id);
+    })
+    // нажимаем на ссылку Удалить
+    $("body").on("click", ".removeLink", function () {
+      var id = $(this).data("id");
+      DeleteEquipment(id);
+    })
+    // загрузка оборудования
+    GetEquipments();
+  </script>
+</body>
+
+</html>
